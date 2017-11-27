@@ -1,0 +1,13 @@
+[package]
+name = "dilithium"
+version = "0.1.0"
+authors = ["quininer <quininer@live.com>"]
+
+[features]
+default = [ "mode2" ]
+mode0 = []
+mode1 = []
+mode2 = []
+mode3 = []
+
+[dependencies]
