@@ -11,3 +11,4 @@ mode2 = []
 mode3 = []
 
 [dependencies]
+itertools = "0.7"
