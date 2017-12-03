@@ -11,4 +11,7 @@ mode2 = []
 mode3 = []
 
 [dependencies]
-itertools = "0.7"
+itertools = "*"
+byteorder = "*"
+sha3 = "*"
+digest = "*"

@@ -3,19 +3,19 @@
 pub const SEEDBYTES    : usize = 32;
 pub const CRHBYTES     : usize = 48;
 pub const N            : usize = 256;
-pub const Q            : usize = 8380417;
+pub const Q            : u32   = 8380417;
 pub const QBITS        : usize = 23;
 pub const ROOT_OF_UNITY: usize = 1753;
 pub const D            : usize = 14;
-pub const GAMMA1       : usize = (Q - 1) / 16;
-pub const GAMMA2       : usize = GAMMA1 / 2;
-pub const ALPHA        : usize = 2 * GAMMA2;
+pub const GAMMA1       : u32   = (Q - 1) / 16;
+pub const GAMMA2       : u32   = GAMMA1 / 2;
+pub const ALPHA        : u32   = 2 * GAMMA2;
 
 #[cfg(feature = "mode0")]
 mod mode {
     pub const K       : usize = 3;
     pub const L       : usize = 2;
-    pub const ETA     : usize = 7;
+    pub const ETA     : u32   = 7;
     pub const SETABITS: usize = 4;
     pub const BETA    : usize =375;
     pub const OMEGA   : usize = 64;
@@ -26,7 +26,7 @@ mod mode {
 mod mode {
     pub const K       : usize = 4;
     pub const L       : usize = 3;
-    pub const ETA     : usize = 6;
+    pub const ETA     : u32   = 6;
     pub const SETABITS: usize = 4;
     pub const BETA    : usize = 325;
     pub const OMEGA   : usize = 80;
@@ -36,7 +36,7 @@ mod mode {
 mod mode {
     pub const K       : usize = 5;
     pub const L       : usize = 4;
-    pub const ETA     : usize = 5;
+    pub const ETA     : u32   = 5;
     pub const SETABITS: usize = 4;
     pub const BETA    : usize = 275;
     pub const OMEGA   : usize = 96;
@@ -46,7 +46,7 @@ mod mode {
 mod mode {
     pub const K       : usize = 6;
     pub const L       : usize = 5;
-    pub const ETA     : usize = 3;
+    pub const ETA     : u32   = 3;
     pub const SETABITS: usize = 3;
     pub const BETA    : usize = 175;
     pub const OMEGA   : usize = 120;

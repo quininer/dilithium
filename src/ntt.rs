@@ -12,7 +12,7 @@ pub fn ntt(p: &mut [u32; N]) {
 
             for j in start..(start + len) {
                 let t = montgomery_reduce(zeta * u64::from(p[j + len]));
-                p[j + len] = p[j] + 2 * Q as u32 - t;
+                p[j + len] = p[j] + 2 * Q - t;
                 p[j] += t;
             }
         }
@@ -33,7 +33,7 @@ pub fn invntt_frominvmont(p: &mut [u32; N]) {
             for j in start..(start + len) {
                 let t = p[j];
                 p[j] += p[j + len];
-                p[j + len] = t + 256 * Q as u32 - p[j + len];
+                p[j + len] = t + 256 * Q - p[j + len];
                 p[j + len] = montgomery_reduce(zeta * u64::from(p[j + len]));
             }
         }
