@@ -11,6 +11,8 @@ mode2 = []
 mode3 = []
 
 [dependencies]
+rand = "*"
+arrayref = "*"
 itertools = "*"
 byteorder = "*"
 sha3 = "*"

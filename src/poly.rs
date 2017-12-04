@@ -1,6 +1,4 @@
 use byteorder::{ ByteOrder, LittleEndian };
-use digest::{ Input, ExtendableOutput, XofReader };
-use sha3::Shake256;
 use ::params::{
     Q, N, ETA, GAMMA1, GAMMA2,
     SEEDBYTES, CRHBYTES
@@ -8,9 +6,6 @@ use ::params::{
 use ::reduce;
 pub use ::ntt::{ ntt, invntt_frominvmont as invntt_montgomery };
 
-
-
-const SHAKE256_RATE: usize = 136;
 
 pub type Poly = [u32; N];
 
@@ -69,6 +64,11 @@ pub fn chknorm(a: &Poly, b: u32) -> bool {
 }
 
 pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
+    use digest::{ Input, ExtendableOutput, XofReader };
+    use sha3::Shake256;
+
+    const SHAKE256_RATE: usize = 136;
+
     fn rej_eta(a: &mut [u32], buf: &[u8]) -> usize {
         let mut ctr = 0;
         let mut pos = 0;
@@ -112,6 +112,11 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
 }
 
 pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES + CRHBYTES], nonce: u16) {
+    use digest::{ Input, ExtendableOutput, XofReader };
+    use sha3::Shake256;
+
+    const SHAKE256_RATE: usize = 136;
+
     fn rej_gemma1m1(a: &mut [u32], buf: &[u8]) -> usize {
         let mut ctr = 0;
         let mut pos = 0;
@@ -160,5 +165,11 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES + CRHBYTES], nonce: 
     if ctr < N {
         xof.read(&mut outbuf[..SHAKE256_RATE]);
         rej_gemma1m1(&mut a[ctr..], &outbuf[..SHAKE256_RATE]);
+    }
+}
+
+pub fn w1_pack(r: &mut [u8], a: &Poly) {
+    for i in 0..N {
+        r[i] = (a[2 * i] | (a[2 * i + 1] << 4)) as u8;
     }
 }

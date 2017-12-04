@@ -6,6 +6,7 @@ use ::reduce;
 
 macro_rules! polyvec {
     ( $polyvec:ident, $len:expr ) => {
+        #[derive(Copy, Clone)]
         pub struct $polyvec(pub [Poly; $len]);
 
         impl $polyvec {
@@ -16,19 +17,19 @@ macro_rules! polyvec {
 
             pub fn with_add(&mut self, u: &Self, v: &Self) {
                 for i in 0..$len {
-                    poly::add(&mut self.0[i], &u.0[i], &v.0[i]);
+                    poly::add(&mut self[i], &u[i], &v[i]);
                 }
             }
 
             pub fn add_assign(&mut self, u: &Self) {
                 for i in 0..$len {
-                    poly::add_assign(&mut self.0[i], &u.0[i]);
+                    poly::add_assign(&mut self[i], &u[i]);
                 }
             }
 
             pub fn with_sub(&mut self, u: &Self, v: &Self) {
                 for i in 0..$len {
-                    poly::sub(&mut self.0[i], &u.0[i], &v.0[i]);
+                    poly::sub(&mut self[i], &u[i], &v[i]);
                 }
             }
 
@@ -58,13 +59,35 @@ macro_rules! polyvec {
                     .fold(false, |x, y| x | y)
             }
         }
+
+        impl ::core::ops::Index<usize> for $polyvec {
+            type Output = Poly;
+
+            #[inline(always)]
+            fn index(&self, i: usize) -> &Self::Output {
+                self.0.index(i)
+            }
+        }
+
+        impl ::core::ops::IndexMut<usize> for $polyvec {
+            #[inline(always)]
+            fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+                self.0.index_mut(i)
+            }
+        }
+
+        impl Default for $polyvec {
+            fn default() -> Self {
+                $polyvec([[0; N]; $len])
+            }
+        }
     }
 }
 
 polyvec!(PolyVecL, L);
 polyvec!(PolyVecK, K);
 
-pub fn pointwise_acc_invmontgomery(w: &mut Poly, &PolyVecL(ref u): &PolyVecL, &PolyVecL(ref v): &PolyVecL) {
+pub fn pointwise_acc_invmontgomery(w: &mut Poly, u: &PolyVecL, v: &PolyVecL) {
     let mut t = [0; N];
 
     poly::pointwise_invmontgomery(w, &u[0], &v[0]);
@@ -83,9 +106,9 @@ impl PolyVecK {
     pub fn power2round(&self, v0: &mut Self, v1: &mut Self) {
         for i in 0..K {
             for j in 0..N {
-                let (x, y) = power2round(self.0[i][j]);
-                v0.0[i][j] = x;
-                v1.0[i][j] = y;
+                let (x, y) = power2round(self[i][j]);
+                v0[i][j] = x;
+                v1[i][j] = y;
             }
         }
     }
@@ -93,19 +116,15 @@ impl PolyVecK {
     pub fn decompose(&self, v0: &mut Self, v1: &mut Self) {
         for i in 0..K {
             for j in 0..N {
-                let (x, y) = decompose(self.0[i][j]);
-                v0.0[i][j] = x;
-                v1.0[i][j] = y;
+                let (x, y) = decompose(self[i][j]);
+                v0[i][j] = x;
+                v1[i][j] = y;
             }
         }
     }
 }
 
-pub fn make_hint(
-    &mut PolyVecK(ref mut h): &mut PolyVecK,
-    &PolyVecK(ref u): &PolyVecK,
-    &PolyVecK(ref v): &PolyVecK
-) -> u32 {
+pub fn make_hint(h: &mut PolyVecK, u: &PolyVecK, v: &PolyVecK) -> u32 {
     let mut s = 0;
     for i in 0..K {
         for j in 0..N {
@@ -116,11 +135,7 @@ pub fn make_hint(
     s
 }
 
-pub fn use_hint(
-    &mut PolyVecK(ref mut w): &mut PolyVecK,
-    &PolyVecK(ref u): &PolyVecK,
-    &PolyVecK(ref h): &PolyVecK
-) {
+pub fn use_hint(w: &mut PolyVecK, u: &PolyVecK, h: &PolyVecK) {
     for i in 0..K {
         for j in 0..N {
             w[i][j] = rounding::use_hint(u[i][j], h[i][j]);

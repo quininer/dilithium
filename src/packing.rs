@@ -6,53 +6,66 @@ use ::poly::Poly;
 use ::polyvec::{ PolyVecL, PolyVecK };
 
 
-pub struct PublicKey {
-    t1: PolyVecK,
-    rho: [u8; SEEDBYTES]
-}
-
-pub struct SecretKey {
-    s1: PolyVecL,
-    s2: PolyVecK,
-    t0: PolyVecK,
-    rho: [u8; SEEDBYTES],
-    key: [u8; SEEDBYTES],
-    tr: [u8; CRHBYTES]
-}
-
-pub struct Signature {
-    z: PolyVecL,
-    h: PolyVecK,
-    c: Poly
-}
 
 
-impl PublicKey {
-    pub fn pack(&self, pk: &mut [u8; PK_SIZE_PACKED]) {
+pub mod pk {
+    use super::*;
+
+    pub fn pack(pk: &mut [u8; PK_SIZE_PACKED], t1: &PolyVecK, rho: &[u8; SEEDBYTES]) {
         unimplemented!()
     }
 
-    pub fn unpack(&mut self, pk: &[u8; PK_SIZE_PACKED]) {
+    pub fn unpack(pk: &[u8; PK_SIZE_PACKED], t1: &mut PolyVecK, rho: &mut [u8; SEEDBYTES]) {
         unimplemented!()
     }
 }
 
-impl SecretKey {
-    pub fn pack(&self, sk: &mut [u8; SK_SIZE_PACKED]) {
+pub mod sk {
+    use super::*;
+
+    pub fn pack(
+        sk: &mut [u8; SK_SIZE_PACKED],
+        s1: &PolyVecL,
+        s2: &PolyVecK,
+        t0: &PolyVecK,
+        rho: &[u8; SEEDBYTES],
+        key: &[u8; SEEDBYTES],
+        tr: &[u8; CRHBYTES]
+    ) {
         unimplemented!()
     }
 
-    pub fn unpack(&mut self, sk: &[u8; SK_SIZE_PACKED]) {
+    pub fn unpack(
+        sk: &[u8; SK_SIZE_PACKED],
+        s1: &mut PolyVecL,
+        s2: &mut PolyVecK,
+        t0: &mut PolyVecK,
+        rho: &mut [u8; SEEDBYTES],
+        key: &mut [u8; SEEDBYTES],
+        tr: &mut [u8; CRHBYTES]
+    ) {
         unimplemented!()
     }
 }
 
-impl Signature {
-    pub fn pack(&self, sign: &mut [u8; SIG_SIZE_PACKED]) {
+pub mod sign {
+    use super::*;
+
+    pub fn pack(
+        sign: &mut [u8; SIG_SIZE_PACKED],
+        z: &PolyVecL,
+        h: &PolyVecK,
+        c: &Poly
+    ) {
         unimplemented!()
     }
 
-    pub fn unpack(&mut self, sign: &[u8; SIG_SIZE_PACKED]) {
+    pub fn unpack(
+        sign: &[u8; SIG_SIZE_PACKED],
+        z: &mut PolyVecL,
+        h: &mut PolyVecK,
+        c: &mut Poly
+    ) {
         unimplemented!()
     }
 }
