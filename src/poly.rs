@@ -111,7 +111,7 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
     }
 }
 
-pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES + CRHBYTES], nonce: u16) {
+pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES], nonce: u16) {
     use digest::{ Input, ExtendableOutput, XofReader };
     use sha3::Shake256;
 
@@ -156,6 +156,7 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES + CRHBYTES], nonce: 
 
     let mut hasher = Shake256::default();
     hasher.process(seed);
+    hasher.process(mu);
     hasher.process(&nonce_bytes);
 
     let mut xof = hasher.xof_result();
@@ -165,6 +166,33 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES + CRHBYTES], nonce: 
     if ctr < N {
         xof.read(&mut outbuf[..SHAKE256_RATE]);
         rej_gemma1m1(&mut a[ctr..], &outbuf[..SHAKE256_RATE]);
+    }
+}
+
+pub fn t1_pack(r: &mut [u8], a: &Poly) {
+    for i in 0..(N / 8) {
+        r[9*i+0]  = ( a[8*i+0] & 0xFF) as u8;
+        r[9*i+1]  = ((a[8*i+0] >> 8) | ((a[8*i+1] & 0x7F) << 1)) as u8;
+        r[9*i+2]  = ((a[8*i+1] >> 7) | ((a[8*i+2] & 0x3F) << 2)) as u8;
+        r[9*i+3]  = ((a[8*i+2] >> 6) | ((a[8*i+3] & 0x1F) << 3)) as u8;
+        r[9*i+4]  = ((a[8*i+3] >> 5) | ((a[8*i+4] & 0x0F) << 4)) as u8;
+        r[9*i+5]  = ((a[8*i+4] >> 4) | ((a[8*i+5] & 0x07) << 5)) as u8;
+        r[9*i+6]  = ((a[8*i+5] >> 3) | ((a[8*i+6] & 0x03) << 6)) as u8;
+        r[9*i+7]  = ((a[8*i+6] >> 2) | ((a[8*i+7] & 0x01) << 7)) as u8;
+        r[9*i+8]  = ( a[8*i+7] >> 1) as u8;
+    }
+}
+
+pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
+    for i in 0..(N / 8) {
+        r[8*i+0] =  u32::from(a[9*i+0])       | (u32::from(a[9*i+1] & 0x01) << 8);
+        r[8*i+1] = (u32::from(a[9*i+1]) >> 1) | (u32::from(a[9*i+2] & 0x03) << 7);
+        r[8*i+2] = (u32::from(a[9*i+2]) >> 2) | (u32::from(a[9*i+3] & 0x07) << 6);
+        r[8*i+3] = (u32::from(a[9*i+3]) >> 3) | (u32::from(a[9*i+4] & 0x0F) << 5);
+        r[8*i+4] = (u32::from(a[9*i+4]) >> 4) | (u32::from(a[9*i+5] & 0x1F) << 4);
+        r[8*i+5] = (u32::from(a[9*i+5]) >> 5) | (u32::from(a[9*i+6] & 0x3F) << 3);
+        r[8*i+6] = (u32::from(a[9*i+6]) >> 6) | (u32::from(a[9*i+7] & 0x7F) << 2);
+        r[8*i+7] = (u32::from(a[9*i+7]) >> 7) | (u32::from(a[9*i+8] & 0xFF) << 1);
     }
 }
 
