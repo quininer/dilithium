@@ -1,7 +1,7 @@
 use ::params::{
     L, K,
     SEEDBYTES, CRHBYTES,
-    POLT1_SIZE_PACKED,
+    POLETA_SIZE_PACKED, POLT0_SIZE_PACKED, POLT1_SIZE_PACKED,
     PK_SIZE_PACKED, SK_SIZE_PACKED, SIG_SIZE_PACKED
 };
 use ::poly::{ self, Poly };
@@ -14,16 +14,20 @@ pub mod pk {
     use super::*;
 
     pub fn pack(pk: &mut [u8; PK_SIZE_PACKED], t1: &PolyVecK, rho: &[u8; SEEDBYTES]) {
-        pk[..SEEDBYTES].copy_from_slice(rho);
+        let (rho_bytes, t1_bytes) = mut_array_refs!(pk, SEEDBYTES, POLT1_SIZE_PACKED * K);
+
+        rho_bytes.clone_from(rho);
         for i in 0..K {
-            poly::t1_pack(&mut pk[SEEDBYTES..][i * POLT1_SIZE_PACKED..][..POLT1_SIZE_PACKED], &t1[i]);
+            poly::t1_pack(&mut t1_bytes[i * POLT1_SIZE_PACKED..][..POLT1_SIZE_PACKED], &t1[i]);
         }
     }
 
     pub fn unpack(pk: &[u8; PK_SIZE_PACKED], t1: &mut PolyVecK, rho: &mut [u8; SEEDBYTES]) {
-        rho.copy_from_slice(&pk[..SEEDBYTES]);
+        let (rho_bytes, t1_bytes) = array_refs!(pk, SEEDBYTES, POLT1_SIZE_PACKED * K);
+
+        rho.clone_from(rho_bytes);
         for i in 0..K {
-            poly::t1_unpack(&mut t1[i], &pk[SEEDBYTES..][i * POLT1_SIZE_PACKED..][..POLT1_SIZE_PACKED]);
+            poly::t1_unpack(&mut t1[i], &t1_bytes[i * POLT1_SIZE_PACKED..][..POLT1_SIZE_PACKED]);
         }
     }
 }
@@ -40,7 +44,28 @@ pub mod sk {
         s2: &PolyVecK,
         t0: &PolyVecK
     ) {
-        unimplemented!()
+        let (rho_bytes, key_bytes, tr_bytes, s1_bytes, s2_bytes, t0_bytes) =
+            mut_array_refs!(
+                sk,
+                SEEDBYTES, SEEDBYTES, CRHBYTES,
+                POLETA_SIZE_PACKED * L,
+                POLETA_SIZE_PACKED * K,
+                POLT0_SIZE_PACKED * K
+            );
+
+        rho_bytes.clone_from(rho);
+        key_bytes.clone_from(key);
+        tr_bytes.clone_from(tr);
+
+        for i in 0..L {
+            poly::eta_pack(&mut s1_bytes[i * POLETA_SIZE_PACKED..][..POLETA_SIZE_PACKED], &s1[i]);
+        }
+        for i in 0..K {
+            poly::eta_pack(&mut s2_bytes[i * POLETA_SIZE_PACKED..][..POLETA_SIZE_PACKED], &s2[i]);
+        }
+        for i in 0..K {
+            poly::t0_pack(&mut t0_bytes[i * POLT0_SIZE_PACKED..][..POLT0_SIZE_PACKED], &t0[i]);
+        }
     }
 
     pub fn unpack(
@@ -52,7 +77,28 @@ pub mod sk {
         s2: &mut PolyVecK,
         t0: &mut PolyVecK
    ) {
-        unimplemented!()
+        let (rho_bytes, key_bytes, tr_bytes, s1_bytes, s2_bytes, t0_bytes) =
+            array_refs!(
+                sk,
+                SEEDBYTES, SEEDBYTES, CRHBYTES,
+                POLETA_SIZE_PACKED * L,
+                POLETA_SIZE_PACKED * K,
+                POLT0_SIZE_PACKED * K
+            );
+
+        rho.clone_from(rho_bytes);
+        key.clone_from(key_bytes);
+        tr.clone_from(tr_bytes);
+
+        for i in 0..L {
+            poly::eta_unpack(&mut s1[i], &s1_bytes[i * POLETA_SIZE_PACKED..][..POLETA_SIZE_PACKED]);
+        }
+        for i in 0..K {
+            poly::eta_unpack(&mut s2[i], &s2_bytes[i * POLETA_SIZE_PACKED..][..POLETA_SIZE_PACKED]);
+        }
+        for i in 0..K {
+            poly::t0_unpack(&mut t0[i], &t0_bytes[i * POLT0_SIZE_PACKED..][..POLT0_SIZE_PACKED]);
+        }
     }
 }
 

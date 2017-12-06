@@ -17,7 +17,7 @@ mod mode {
     pub const L       : usize = 2;
     pub const ETA     : u32   = 7;
     pub const SETABITS: usize = 4;
-    pub const BETA    : usize =375;
+    pub const BETA    : u32   = 375;
     pub const OMEGA   : usize = 64;
 
     pub const PUBLICKEYBYTES: usize = 896;
@@ -31,7 +31,7 @@ mod mode {
     pub const L       : usize = 3;
     pub const ETA     : u32   = 6;
     pub const SETABITS: usize = 4;
-    pub const BETA    : usize = 325;
+    pub const BETA    : u32   = 325;
     pub const OMEGA   : usize = 80;
 
     pub const PUBLICKEYBYTES: usize = 1184;
@@ -45,7 +45,7 @@ mod mode {
     pub const L       : usize = 4;
     pub const ETA     : u32   = 5;
     pub const SETABITS: usize = 4;
-    pub const BETA    : usize = 275;
+    pub const BETA    : u32   = 275;
     pub const OMEGA   : usize = 96;
 
     pub const PUBLICKEYBYTES: usize = 1472;
@@ -59,7 +59,7 @@ mod mode {
     pub const L       : usize = 5;
     pub const ETA     : u32   = 3;
     pub const SETABITS: usize = 3;
-    pub const BETA    : usize = 175;
+    pub const BETA    : u32   = 175;
     pub const OMEGA   : usize = 120;
 
     pub const PUBLICKEYBYTES: usize = 1760;

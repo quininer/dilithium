@@ -76,6 +76,17 @@ macro_rules! polyvec {
             }
         }
 
+        impl ::core::cmp::PartialEq for $polyvec {
+            fn eq(&self, other: &Self) -> bool {
+                self.0.iter().zip(&other.0)
+                    .flat_map(|(x, y)| x.iter().zip(y.iter()))
+                    .find(|&(x, y)| x != y)
+                    .is_none()
+            }
+        }
+
+        impl Eq for $polyvec {}
+
         impl Default for $polyvec {
             fn default() -> Self {
                 $polyvec([[0; N]; $len])
@@ -124,12 +135,12 @@ impl PolyVecK {
     }
 }
 
-pub fn make_hint(h: &mut PolyVecK, u: &PolyVecK, v: &PolyVecK) -> u32 {
+pub fn make_hint(h: &mut PolyVecK, u: &PolyVecK, v: &PolyVecK) -> usize {
     let mut s = 0;
     for i in 0..K {
         for j in 0..N {
             h[i][j] = rounding::make_hint(u[i][j], v[i][j]);
-            s += h[i][j];
+            s += h[i][j] as usize;
         }
     }
     s

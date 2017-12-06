@@ -1,6 +1,6 @@
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
-    Q, N, ETA, GAMMA1, GAMMA2,
+    Q, N, D, ETA, GAMMA1, GAMMA2,
     SEEDBYTES, CRHBYTES
 };
 use ::reduce;
@@ -166,6 +166,115 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
     if ctr < N {
         xof.read(&mut outbuf[..SHAKE256_RATE]);
         rej_gemma1m1(&mut a[ctr..], &outbuf[..SHAKE256_RATE]);
+    }
+}
+
+pub fn eta_pack(r: &mut [u8], a: &Poly) {
+    if ETA <= 3 {
+        let mut t = [0; 8];
+        for i in 0..(N / 8) {
+            t[0] = (Q + ETA - a[8*i+0]) as u8;
+            t[1] = (Q + ETA - a[8*i+1]) as u8;
+            t[2] = (Q + ETA - a[8*i+2]) as u8;
+            t[3] = (Q + ETA - a[8*i+3]) as u8;
+            t[4] = (Q + ETA - a[8*i+4]) as u8;
+            t[5] = (Q + ETA - a[8*i+5]) as u8;
+            t[6] = (Q + ETA - a[8*i+6]) as u8;
+            t[7] = (Q + ETA - a[8*i+7]) as u8;
+
+            r[3*i+0]  = t[0];
+            r[3*i+0] |= t[1] << 3;
+            r[3*i+0] |= t[2] << 6;
+            r[3*i+1]  = t[2] >> 2;
+            r[3*i+1] |= t[3] << 1;
+            r[3*i+1] |= t[4] << 4;
+            r[3*i+1] |= t[5] << 7;
+            r[3*i+2]  = t[5] >> 1;
+            r[3*i+2] |= t[6] << 2;
+            r[3*i+2] |= t[7] << 5;
+        }
+    } else {
+        let mut t = [0; 2];
+        for i in 0..(N / 2) {
+            t[0] = (Q + ETA - a[2*i+0]) as u8;
+            t[1] = (Q + ETA - a[2*i+1]) as u8;
+            r[i] = (t[0] | (t[1] << 4));
+        }
+    }
+}
+
+pub fn eta_unpack(r: &mut Poly, a: &[u8]) {
+    if ETA <= 3 {
+        for i in 0..(N / 8) {
+            r[8*i+0] = u32::from(a[3*i+0]) & 0x07;
+            r[8*i+1] = (u32::from(a[3*i+0]) >> 3) & 0x07;
+            r[8*i+2] = (u32::from(a[3*i+0]) >> 6) | ((u32::from(a[3*i+1]) & 0x01) << 2);
+            r[8*i+3] = (u32::from(a[3*i+1]) >> 1) & 0x07;
+            r[8*i+4] = (u32::from(a[3*i+1]) >> 4) & 0x07;
+            r[8*i+5] = (u32::from(a[3*i+1]) >> 7) | ((u32::from(a[3*i+2]) & 0x03) << 1);
+            r[8*i+6] = (u32::from(a[3*i+2]) >> 2) & 0x07;
+            r[8*i+7] = (u32::from(a[3*i+2]) >> 5);
+
+            r[8*i+0] = Q + ETA - r[8*i+0];
+            r[8*i+1] = Q + ETA - r[8*i+1];
+            r[8*i+2] = Q + ETA - r[8*i+2];
+            r[8*i+3] = Q + ETA - r[8*i+3];
+            r[8*i+4] = Q + ETA - r[8*i+4];
+            r[8*i+5] = Q + ETA - r[8*i+5];
+            r[8*i+6] = Q + ETA - r[8*i+6];
+            r[8*i+7] = Q + ETA - r[8*i+7];
+        }
+    } else {
+        for i in 0..(N / 2) {
+            r[2*i+0] = u32::from(a[i]) & 0x0F;
+            r[2*i+1] = u32::from(a[i]) >> 4;
+            r[2*i+0] = Q + ETA - r[2*i+0];
+            r[2*i+1] = Q + ETA - r[2*i+1];
+        }
+    }
+}
+
+pub fn t0_pack(r: &mut [u8], a: &Poly) {
+    let mut t = [0; 4];
+    for i in 0..(N / 4) {
+        t[0] = Q + (1 << (D-1) as u32) - a[4*i+0];
+        t[1] = Q + (1 << (D-1) as u32) - a[4*i+1];
+        t[2] = Q + (1 << (D-1) as u32) - a[4*i+2];
+        t[3] = Q + (1 << (D-1) as u32) - a[4*i+3];
+
+        r[7*i+0]  =  t[0] as u8;
+        r[7*i+1]  =  (t[0] >> 8) as u8;
+        r[7*i+1] |=  (t[1] << 6) as u8;
+        r[7*i+2]  =  (t[1] >> 2) as u8;
+        r[7*i+3]  =  (t[1] >> 10) as u8;
+        r[7*i+3] |=  (t[2] << 4) as u8;
+        r[7*i+4]  =  (t[2] >> 4) as u8;
+        r[7*i+5]  =  (t[2] >> 12) as u8;
+        r[7*i+5] |=  (t[3] << 2) as u8;
+        r[7*i+6]  =  (t[3] >> 6) as u8;
+    }
+}
+
+pub fn t0_unpack(r: &mut Poly, a: &[u8]) {
+    for i in 0..(N / 4) {
+        r[4*i+0]  = u32::from(a[7*i+0]);
+        r[4*i+0] |= (u32::from(a[7*i+1]) & 0x3F) << 8;
+
+        r[4*i+1]  = u32::from(a[7*i+1]) >> 6;
+        r[4*i+1] |= u32::from(a[7*i+2]) << 2;
+        r[4*i+1] |= (u32::from(a[7*i+3]) & 0x0F) << 10;
+
+        r[4*i+2]  = u32::from(a[7*i+3]) >> 4;
+        r[4*i+2] |= u32::from(a[7*i+4]) << 4;
+        r[4*i+2] |= (u32::from(a[7*i+5]) & 0x03) << 12;
+
+        r[4*i+3]  = u32::from(a[7*i+5]) >> 2;
+        r[4*i+3] |= u32::from(a[7*i+6]) << 6;
+
+        r[4*i+0] = Q + (1 << (D-1) as u32) - r[4*i+0];
+        r[4*i+1] = Q + (1 << (D-1) as u32) - r[4*i+1];
+        r[4*i+2] = Q + (1 << (D-1) as u32) - r[4*i+2];
+        r[4*i+3] = Q + (1 << (D-1) as u32) - r[4*i+3];
     }
 }
 

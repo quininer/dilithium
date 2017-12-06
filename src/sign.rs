@@ -1,8 +1,7 @@
 use rand::Rng;
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
-    N, K, L, Q,
-    BYTES,
+    N, K, L, Q, GAMMA1, GAMMA2, BETA, OMEGA,
     SEEDBYTES, CRHBYTES, POLW1_SIZE_PACKED,
     PK_SIZE_PACKED, SK_SIZE_PACKED, SIG_SIZE_PACKED
 };
@@ -124,7 +123,7 @@ pub fn keypair(rng: &mut Rng, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_bytes: &mu
     packing::sk::pack(sk_bytes, rho, key, &tr, &s1, &s2, &t0);
 }
 
-pub fn sign(sm: &mut [u8], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
+pub fn sign(sm: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
     let mut nonce = 0;
     let mut c = [0; N];
     let mut mat = [PolyVecL::default(); K];
@@ -132,7 +131,8 @@ pub fn sign(sm: &mut [u8], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
         (PolyVecL::default(), PolyVecL::default(), PolyVecL::default());
     let (mut s2, mut t0, mut w, mut w1) =
         (PolyVecK::default(), PolyVecK::default(), PolyVecK::default(), PolyVecK::default());
-    let mut tmp = Default::default();
+    let (mut h, mut wcs2, mut wcs20, mut ct0, mut tmp) =
+        (PolyVecK::default(), PolyVecK::default(), PolyVecK::default(), PolyVecK::default(), PolyVecK::default());
     let (mut rho, mut key, mut mu) = ([0; SEEDBYTES], [0; SEEDBYTES], [0; CRHBYTES]);
 
     packing::sk::unpack(sk, &mut rho, &mut key, &mut mu, &mut s1, &mut s2, &mut t0);
@@ -160,6 +160,44 @@ pub fn sign(sm: &mut [u8], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
         w.decompose(&mut w1, &mut tmp);
         challenge(&mut c, &mu, &w1);
 
-        // TODO
+        let mut chat = c.clone();
+        poly::ntt(&mut chat);
+        for i in 0..L {
+            poly::pointwise_invmontgomery(&mut z[i], &chat, &s1[i]);
+            poly::invntt_montgomery(&mut z[i])
+        }
+        z.add_assign(&y);
+        z.freeze();
+        if z.chknorm(GAMMA1 - BETA) { continue };
+
+        for i in 0..K {
+            poly::pointwise_invmontgomery(&mut wcs20[i], &chat, &s2[i]);
+            poly::invntt_montgomery(&mut wcs20[i]);
+        }
+        wcs2.with_sub(&w, &wcs20);
+        wcs2.freeze();
+        wcs2.decompose(&mut tmp, &mut wcs20);
+        wcs20.freeze();
+        if wcs20.chknorm(GAMMA2 - BETA) { continue };
+
+        if tmp != w1 { continue };
+
+        for i in 0..K {
+            poly::pointwise_invmontgomery(&mut ct0[i], &chat, &t0[i]);
+            poly::invntt_montgomery(&mut ct0[i]);
+        }
+
+        ct0.freeze();
+        if ct0.chknorm(GAMMA2 - BETA) { continue };
+
+        tmp.with_add(&wcs2, &ct0);
+        ct0.neg();
+        tmp.freeze();
+        let n = polyvec::make_hint(&mut h, &tmp, &ct0);
+        if n > OMEGA { continue };
+
+        packing::sign::pack(sm, &z, &h, &c);
+
+        break
     }
 }
