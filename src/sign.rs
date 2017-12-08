@@ -1,7 +1,7 @@
 use rand::Rng;
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
-    N, K, L, Q, GAMMA1, GAMMA2, BETA, OMEGA,
+    N, K, L, Q, D, GAMMA1, GAMMA2, BETA, OMEGA,
     SEEDBYTES, CRHBYTES, POLW1_SIZE_PACKED,
     PK_SIZE_PACKED, SK_SIZE_PACKED, SIG_SIZE_PACKED
 };
@@ -123,7 +123,7 @@ pub fn keypair(rng: &mut Rng, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_bytes: &mu
     packing::sk::pack(sk_bytes, rho, key, &tr, &s1, &s2, &t0);
 }
 
-pub fn sign(sm: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
+pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
     let mut nonce = 0;
     let mut c = [0; N];
     let mut mat = [PolyVecL::default(); K];
@@ -136,7 +136,7 @@ pub fn sign(sm: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED])
     let (mut rho, mut key, mut mu) = ([0; SEEDBYTES], [0; SEEDBYTES], [0; CRHBYTES]);
 
     packing::sk::unpack(sk, &mut rho, &mut key, &mut mu, &mut s1, &mut s2, &mut t0);
-    shake256!(&mut mu; m, &mu);
+    shake256!(&mut mu; &mu, m);
 
     expand_mat(&mut mat, &rho);
     s1.ntt();
@@ -196,8 +196,53 @@ pub fn sign(sm: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED])
         let n = polyvec::make_hint(&mut h, &tmp, &ct0);
         if n > OMEGA { continue };
 
-        packing::sign::pack(sm, &z, &h, &c);
+        packing::sign::pack(sig, &z, &h, &c);
 
         break
     }
+}
+
+pub fn sign_open(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) -> bool {
+    let (mut rho, mut mu) = ([0; SEEDBYTES], [0; CRHBYTES]);
+    let (mut c, mut cp) = ([0; N], [0; N]);
+    let mut mat = [PolyVecL::default(); K];
+    let mut z = PolyVecL::default();
+    let (mut t1, mut w1, mut h) = Default::default();
+    let (mut tmp1, mut tmp2) = (PolyVecK::default(), PolyVecK::default());
+
+    packing::pk::unpack(pk, &mut t1, &mut rho);
+    packing::sign::unpack(sig, &mut z, &mut h, &mut c);
+    if z.chknorm(GAMMA1 - BETA) { return false };
+
+    shake256!(&mut mu; pk);
+    shake256!(&mut mu; &mu, m);
+
+    expand_mat(&mut mat, &rho);
+
+    z.ntt();
+    for i in 0..K {
+        polyvec::pointwise_acc_invmontgomery(&mut tmp1[i], &mat[i], &z);
+    }
+
+    let mut chat = c.clone();
+    poly::ntt(&mut chat);
+    t1.shift_left(D as u32);
+    t1.ntt();
+    for i in 0..K {
+        poly::pointwise_invmontgomery(&mut tmp2[i], &chat, &t1[i]);
+    }
+
+    let mut tmp = PolyVecK::default();
+    tmp.with_sub(&tmp1, &tmp2);
+    tmp.freeze();
+    tmp.invntt_montgomery();
+
+    tmp.freeze();
+    polyvec::use_hint(&mut w1, &tmp, &h);
+
+    challenge(&mut cp, &mu, &w1);
+    (0..N)
+        .map(|i| c[i] ^ cp[i])
+        .fold(0, |sum, next| sum | next)
+        .eq(&0)
 }

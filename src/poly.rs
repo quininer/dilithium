@@ -1,6 +1,6 @@
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
-    Q, N, D, ETA, GAMMA1, GAMMA2,
+    Q, N, D, ETA, GAMMA1,
     SEEDBYTES, CRHBYTES
 };
 use ::reduce;
@@ -198,7 +198,7 @@ pub fn eta_pack(r: &mut [u8], a: &Poly) {
         for i in 0..(N / 2) {
             t[0] = (Q + ETA - a[2*i+0]) as u8;
             t[1] = (Q + ETA - a[2*i+1]) as u8;
-            r[i] = (t[0] | (t[1] << 4));
+            r[i] = t[0] | (t[1] << 4);
         }
     }
 }
@@ -213,7 +213,7 @@ pub fn eta_unpack(r: &mut Poly, a: &[u8]) {
             r[8*i+4] = (u32::from(a[3*i+1]) >> 4) & 0x07;
             r[8*i+5] = (u32::from(a[3*i+1]) >> 7) | ((u32::from(a[3*i+2]) & 0x03) << 1);
             r[8*i+6] = (u32::from(a[3*i+2]) >> 2) & 0x07;
-            r[8*i+7] = (u32::from(a[3*i+2]) >> 5);
+            r[8*i+7] = u32::from(a[3*i+2]) >> 5;
 
             r[8*i+0] = Q + ETA - r[8*i+0];
             r[8*i+1] = Q + ETA - r[8*i+1];
@@ -302,6 +302,40 @@ pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
         r[8*i+5] = (u32::from(a[9*i+5]) >> 5) | (u32::from(a[9*i+6] & 0x3F) << 3);
         r[8*i+6] = (u32::from(a[9*i+6]) >> 6) | (u32::from(a[9*i+7] & 0x7F) << 2);
         r[8*i+7] = (u32::from(a[9*i+7]) >> 7) | (u32::from(a[9*i+8] & 0xFF) << 1);
+    }
+}
+
+pub fn z_pack(r: &mut [u8], a: &Poly) {
+    let mut t = [0; 2];
+    for i in 0..(N / 2) {
+        t[0] = GAMMA1 - 1 - a[2*i+0];
+        t[0] += ((t[0] as i32) >> 31) as u32 & Q;
+        t[1] = GAMMA1 - 1 - a[2*i+1];
+        t[1] += ((t[1] as i32) >> 31) as u32 & Q;
+
+        r[5*i+0]  = t[0] as u8;
+        r[5*i+1]  = (t[0] >> 8) as u8;
+        r[5*i+2]  = (t[0] >> 16) as u8;
+        r[5*i+2] |= (t[1] << 4) as u8;
+        r[5*i+3]  = (t[1] >> 4) as u8;
+        r[5*i+4]  = (t[1] >> 12) as u8;
+    }
+}
+
+pub fn z_unpack(r: &mut Poly, a: &[u8]) {
+    for i in 0..(N / 2) {
+        r[2*i+0]  = u32::from(a[5*i+0]);
+        r[2*i+0] |= u32::from(a[5*i+1]) << 8;
+        r[2*i+0] |= u32::from(a[5*i+2] & 0x0F) << 16;
+
+        r[2*i+1]  = u32::from(a[5*i+2]) >> 4;
+        r[2*i+1] |= u32::from(a[5*i+3]) << 4;
+        r[2*i+1] |= u32::from(a[5*i+4]) << 12;
+
+        r[2*i+0] = GAMMA1 - 1 - r[2*i+0];
+        r[2*i+0] += ((r[2*i+0] as i32) >> 31) as u32 & Q;
+        r[2*i+1] = GAMMA1 - 1 - r[2*i+1];
+        r[2*i+1] += ((r[2*i+1] as i32) >> 31) as u32 & Q;
     }
 }
 
