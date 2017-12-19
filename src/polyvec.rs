@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use ::params::{ N, L, K };
 use ::poly::{ self, Poly };
 use ::rounding::{ self, power2round, decompose };

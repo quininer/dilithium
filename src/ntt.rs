@@ -20,9 +20,9 @@ pub fn ntt(p: &mut [u32; N]) {
 }
 
 pub fn invntt_frominvmont(p: &mut [u32; N]) {
-    let f = (MONT as u64) * (MONT as u64) % (Q as u64);
-    let f = f * (Q as u64 - 1) % (Q as u64);
-    let f = f * ((Q as u64 - 1) >> 8) % (Q as u64);
+    let f = (MONT as u64) * (MONT as u64) % u64::from(Q);
+    let f = f * u64::from(Q - 1) % u64::from(Q);
+    let f = f * (u64::from(Q - 1) >> 8) % u64::from(Q);
 
     let mut k = 1;
     for len in (0..8).map(|level| 1 << level) {

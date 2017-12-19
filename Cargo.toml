@@ -17,3 +17,6 @@ itertools = "*"
 byteorder = "*"
 sha3 = "*"
 digest = "*"
+
+[dev-dependencies]
+hex = "*"

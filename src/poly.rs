@@ -54,13 +54,12 @@ pub fn pointwise_invmontgomery(c: &mut Poly, a: &Poly, b: &Poly) {
 
 pub fn chknorm(a: &Poly, b: u32) -> bool {
     a.iter()
-        .map(|a|{
-            let mut t = (Q - 1) / 2 - a;
+        .map(|&a|{
+            let mut t = (Q - 1) / u32::wrapping_sub(2, a);
             t ^= t >> 31;
             (Q - 1) / 2 - t
         })
-        .find(|&t| t >= b)
-        .is_some()
+        .any(|t| t >= b)
 }
 
 pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
@@ -76,7 +75,7 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
         while ctr < a.len() {
             let (t0, t1) =
                 if ETA <= 3 { (u32::from(buf[pos] & 0x07), u32::from(buf[pos] >> 5)) }
-                else { (u32::from(buf[pos] & 0x0f), u32::from(buf[pos] >> 5)) };
+                else { (u32::from(buf[pos] & 0x0f), u32::from(buf[pos] >> 4)) };
             pos += 1;
 
             if t0 <= 2 * ETA {
@@ -122,10 +121,10 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
         let mut pos = 0;
 
         while ctr < a.len() {
-            let mut t0 = u32::from(buf[pos]);
-            t0 |= u32::from(buf[pos + 1]) << 8;
-            t0 |= u32::from(buf[pos + 2]) << 16;
-            t0 &= 0xfffff;
+//            let mut t0 = u32::from(buf[pos]);
+//            t0 |= u32::from(buf[pos + 1]) << 8;
+//            t0 |= u32::from(buf[pos + 2]) << 16;
+//            t0 &= 0xfffff;
 
             let mut t1 = u32::from(buf[pos + 2]) >> 4;
             t1 |= u32::from(buf[pos + 3]) << 4;
@@ -133,8 +132,8 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
 
             pos += 5;
 
-            if t0 <= 2 * GAMMA1 -2 {
-                a[ctr] = Q + GAMMA1 - 1 - t0;
+            if t1 <= 2 * GAMMA1 -2 {
+                a[ctr] = Q + GAMMA1 - 1 - t1;
                 ctr += 1;
             }
             if t1 <= 2 * GAMMA1 -2 && ctr < a.len() {
@@ -340,7 +339,7 @@ pub fn z_unpack(r: &mut Poly, a: &[u8]) {
 }
 
 pub fn w1_pack(r: &mut [u8], a: &Poly) {
-    for i in 0..N {
+    for i in 0..(N / 2) {
         r[i] = (a[2 * i] | (a[2 * i + 1] << 4)) as u8;
     }
 }

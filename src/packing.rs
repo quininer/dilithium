@@ -143,7 +143,7 @@ pub mod sign {
             }
         }
         for i in 0..8 {
-            c_bytes[N / 8..][i] = signs >> 8 * i;
+            c_bytes[N / 8..][i] = signs >> (8 * i);
         }
     }
 

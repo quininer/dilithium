@@ -8,11 +8,14 @@ extern crate digest;
 extern crate sha3;
 
 #[macro_use] mod utils;
+mod reduce;
+mod rounding;
+mod ntt;
+mod poly;
+mod polyvec;
+mod packing;
 pub mod params;
-pub mod reduce;
-pub mod rounding;
-pub mod ntt;
-pub mod poly;
-pub mod polyvec;
-pub mod packing;
 pub mod sign;
+
+#[cfg(test)]
+mod test_vectors;
