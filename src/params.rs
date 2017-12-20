@@ -84,7 +84,7 @@ pub const SK_SIZE_PACKED     : usize = 2 * SEEDBYTES + (L + K) * POLETA_SIZE_PAC
 pub const SIG_SIZE_PACKED    : usize = L * POLZ_SIZE_PACKED + (OMEGA + K) + (N / 8 + 8);
 
 
-pub const MONT: usize = 4193792;
+pub const MONT: u64   = 4193792;
 pub const QINV: usize = 4236238847;
 
 

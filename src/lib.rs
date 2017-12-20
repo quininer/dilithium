@@ -17,5 +17,5 @@ mod packing;
 pub mod params;
 pub mod sign;
 
-#[cfg(test)]
-mod test_vectors;
+#[cfg(test)] mod test_mul;
+#[cfg(test)] mod test_vectors;

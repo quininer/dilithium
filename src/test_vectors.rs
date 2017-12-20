@@ -113,7 +113,7 @@ fn parse_testvectors() -> Result<Vec<TestVector>, FromHexError> {
 }
 
 #[test]
-fn test_vector() {
+fn test_vectors() {
     for tv in parse_testvectors().unwrap() {
         let mut mat = [PolyVecL::default(); K];
         let mut s = PolyVecL::default();

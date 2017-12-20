@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use ::params::{ N, Q, MONT, ZETAS, ZETAS_INV };
-use ::reduce::{ montgomery_reduce };
+use ::reduce::montgomery_reduce;
 
 
 pub fn ntt(p: &mut [u32; N]) {
@@ -20,9 +20,7 @@ pub fn ntt(p: &mut [u32; N]) {
 }
 
 pub fn invntt_frominvmont(p: &mut [u32; N]) {
-    let f = (MONT as u64) * (MONT as u64) % u64::from(Q);
-    let f = f * u64::from(Q - 1) % u64::from(Q);
-    let f = f * (u64::from(Q - 1) >> 8) % u64::from(Q);
+    const F: u64 = ((MONT * MONT % (Q as u64))  * (Q as u64 - 1) % (Q as u64)) * ((Q as u64 - 1) >> 8) % (Q as u64);
 
     let mut k = 1;
     for len in (0..8).map(|level| 1 << level) {
@@ -40,6 +38,6 @@ pub fn invntt_frominvmont(p: &mut [u32; N]) {
     }
 
     for j in 0..N {
-        p[j] = montgomery_reduce(f * u64::from(p[j]));
+        p[j] = montgomery_reduce(F * u64::from(p[j]));
     }
 }
