@@ -17,6 +17,10 @@ fn test_sign() {
 
         keypair(&mut rng, &mut pk, &mut sk);
         sign(&mut sig, &message, &sk);
+
         assert!(verify(&message, &sig, &pk));
+
+        message[2] ^= 42;
+        assert!(!verify(&message, &sig, &pk));
     }
 }
