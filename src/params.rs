@@ -19,10 +19,6 @@ mod mode {
     pub const SETABITS: usize = 4;
     pub const BETA    : u32   = 375;
     pub const OMEGA   : usize = 64;
-
-    pub const PUBLICKEYBYTES: usize = 896;
-    pub const SECRETKEYBYTES: usize = 2096;
-    pub const BYTES         : usize = 1487;
 }
 
 #[cfg(feature = "mode1")]
@@ -33,10 +29,6 @@ mod mode {
     pub const SETABITS: usize = 4;
     pub const BETA    : u32   = 325;
     pub const OMEGA   : usize = 80;
-
-    pub const PUBLICKEYBYTES: usize = 1184;
-    pub const SECRETKEYBYTES: usize = 2800;
-    pub const BYTES         : usize = 2044;
 }
 
 #[cfg(feature = "mode2")]
@@ -47,10 +39,6 @@ mod mode {
     pub const SETABITS: usize = 4;
     pub const BETA    : u32   = 275;
     pub const OMEGA   : usize = 96;
-
-    pub const PUBLICKEYBYTES: usize = 1472;
-    pub const SECRETKEYBYTES: usize = 3504;
-    pub const BYTES         : usize = 2701;
 }
 
 #[cfg(feature = "mode3")]
@@ -61,10 +49,6 @@ mod mode {
     pub const SETABITS: usize = 3;
     pub const BETA    : u32   = 175;
     pub const OMEGA   : usize = 120;
-
-    pub const PUBLICKEYBYTES: usize = 1760;
-    pub const SECRETKEYBYTES: usize = 3856;
-    pub const BYTES         : usize = 3366;
 }
 
 pub use self::mode::*;
@@ -83,6 +67,9 @@ pub const PK_SIZE_PACKED     : usize = SEEDBYTES + K * POLT1_SIZE_PACKED;
 pub const SK_SIZE_PACKED     : usize = 2 * SEEDBYTES + (L + K) * POLETA_SIZE_PACKED + CRHBYTES + K * POLT0_SIZE_PACKED;
 pub const SIG_SIZE_PACKED    : usize = L * POLZ_SIZE_PACKED + (OMEGA + K) + (N / 8 + 8);
 
+pub const PUBLICKEYBYTES: usize = PK_SIZE_PACKED;
+pub const SECRETKEYBYTES: usize = SK_SIZE_PACKED;
+pub const BYTES         : usize = SIG_SIZE_PACKED;
 
 pub const MONT: u64   = 4193792;
 pub const QINV: usize = 4236238847;

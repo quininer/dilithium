@@ -129,7 +129,7 @@ pub mod sign {
             h_bytes[OMEGA + i] = k as u8;
         }
 
-        let mut signs = 0;
+        let mut signs: u64 = 0;
         let mut mask = 1;
         for i in 0..(N / 8) {
             for j in 0..8 {
@@ -143,7 +143,7 @@ pub mod sign {
             }
         }
         for i in 0..8 {
-            c_bytes[N / 8..][i] = signs >> (8 * i);
+            c_bytes[N / 8..][i] = (signs >> (8 * i)) as u8;
         }
     }
 

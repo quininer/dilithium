@@ -55,11 +55,11 @@ pub fn pointwise_invmontgomery(c: &mut Poly, a: &Poly, b: &Poly) {
 pub fn chknorm(a: &Poly, b: u32) -> bool {
     a.iter()
         .map(|&a|{
-            let mut t = (Q - 1) / u32::wrapping_sub(2, a);
+            let mut t = ((Q - 1) / 2).wrapping_sub(a) as i32;
             t ^= t >> 31;
-            (Q - 1) / 2 - t
+            ((Q - 1) / 2) as i32 - t
         })
-        .any(|t| t >= b)
+        .any(|t| t as u32 >= b)
 }
 
 pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
@@ -132,11 +132,11 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
 
             pos += 5;
 
-            if t1 <= 2 * GAMMA1 -2 {
+            if t1 <= 2 * GAMMA1 - 2 {
                 a[ctr] = Q + GAMMA1 - 1 - t1;
                 ctr += 1;
             }
-            if t1 <= 2 * GAMMA1 -2 && ctr < a.len() {
+            if t1 <= 2 * GAMMA1 - 2 && ctr < a.len() {
                 a[ctr] = Q + GAMMA1 - 1 - t1;
                 ctr += 1;
             }
@@ -307,10 +307,10 @@ pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
 pub fn z_pack(r: &mut [u8], a: &Poly) {
     let mut t = [0; 2];
     for i in 0..(N / 2) {
-        t[0] = GAMMA1 - 1 - a[2*i+0];
-        t[0] += ((t[0] as i32) >> 31) as u32 & Q;
-        t[1] = GAMMA1 - 1 - a[2*i+1];
-        t[1] += ((t[1] as i32) >> 31) as u32 & Q;
+        t[0] = (GAMMA1 - 1).wrapping_sub(a[2*i+0]);
+        t[0] = t[0].wrapping_add(((t[0] as i32) >> 31) as u32 & Q);
+        t[1] = (GAMMA1 - 1).wrapping_sub(a[2*i+1]);
+        t[1] = t[1].wrapping_add(((t[1] as i32) >> 31) as u32 & Q);
 
         r[5*i+0]  = t[0] as u8;
         r[5*i+1]  = (t[0] >> 8) as u8;
@@ -331,10 +331,10 @@ pub fn z_unpack(r: &mut Poly, a: &[u8]) {
         r[2*i+1] |= u32::from(a[5*i+3]) << 4;
         r[2*i+1] |= u32::from(a[5*i+4]) << 12;
 
-        r[2*i+0] = GAMMA1 - 1 - r[2*i+0];
-        r[2*i+0] += ((r[2*i+0] as i32) >> 31) as u32 & Q;
-        r[2*i+1] = GAMMA1 - 1 - r[2*i+1];
-        r[2*i+1] += ((r[2*i+1] as i32) >> 31) as u32 & Q;
+        r[2*i+0] = (GAMMA1 - 1).wrapping_sub(r[2*i+0]);
+        r[2*i+0] = r[2*i+0].wrapping_add(((r[2*i+0] as i32) >> 31) as u32 & Q);
+        r[2*i+1] = (GAMMA1 - 1).wrapping_sub(r[2*i+1]);
+        r[2*i+1] = r[2*i+1].wrapping_add(((r[2*i+1] as i32) >> 31) as u32 & Q);
     }
 }
 

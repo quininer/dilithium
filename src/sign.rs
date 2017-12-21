@@ -125,6 +125,23 @@ pub fn keypair(rng: &mut Rng, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_bytes: &mu
     // Compute CRH(rho, t1) and write secret key
     shake256!(&mut tr; pk_bytes);
     packing::sk::pack(sk_bytes, rho, key, &tr, &s1, &s2, &t0);
+
+
+    let mut rho2 = [0; SEEDBYTES];
+    let mut key2 = [0; SEEDBYTES];
+    let mut mu2 = [0; CRHBYTES];
+    let mut s12 = PolyVecL::default();
+    let mut s22 = PolyVecK::default();
+    let mut t02 = PolyVecK::default();
+
+    packing::sk::unpack(sk_bytes, &mut rho2, &mut key2, &mut mu2, &mut s12, &mut s22, &mut t02);
+
+    assert!(&rho[..] == &rho2[..]);
+    assert!(&key[..] == &key2[..]);
+    assert!(&mu2[..] == &mu2[..]);
+    assert!(s1 == s12);
+    assert!(s2 == s22);
+    assert!(t0 == t02);
 }
 
 pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
@@ -168,7 +185,7 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
 
         // Decompose w and call the random oracle
         w.freeze();
-        w.decompose(&mut w1, &mut tmp);
+        w.decompose(&mut tmp, &mut w1);
         challenge(&mut c, &mu, &w1);
 
         // Compute z, reject if it reveals secret
@@ -189,7 +206,7 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
         }
         wcs2.with_sub(&w, &wcs20);
         wcs2.freeze();
-        wcs2.decompose(&mut tmp, &mut wcs20);
+        wcs2.decompose(&mut wcs20, &mut tmp);
         wcs20.freeze();
         if wcs20.chknorm(GAMMA2 - BETA) { continue };
 

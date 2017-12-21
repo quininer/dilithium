@@ -5,19 +5,21 @@ use ::reduce::freeze;
 pub fn power2round(a: u32) -> (u32, u32) {
     let d = D as u32;
 
-    let mut t = a & ((1 << d) - 1);
-    t = t.wrapping_sub((1 << (d - 1)) + 1);
+    let mut t = (a & ((1 << d) - 1)) as i32;
+    t -= (1 << (d - 1)) + 1;
     t += (t >> 31) & (1 << d);
-    t = t.wrapping_sub((1 << (d - 1)) - 1);
-    (Q.wrapping_add(t), a.wrapping_sub(t) >> d)
+    t -= (1 << (d - 1)) - 1;
+    (Q.wrapping_add(t as u32), a.wrapping_sub(t as u32) >> d)
 }
 
 pub fn decompose(mut a: u32) -> (u32, u32) {
+    let alpha = ALPHA as i32;
+
     let mut t = (a & 0x7_ffff) as i32;
     t += ((a >> 19) << 9) as i32;
-    t -= (ALPHA / 2 + 1) as i32;
-    t += (t >> 31) & (ALPHA as i32);
-    t -= (ALPHA / 2 - 1) as i32;
+    t -= alpha / 2 + 1;
+    t += (t >> 31) & alpha;
+    t -= alpha / 2 - 1;
     a = a.wrapping_sub(t as u32);
 
     let mut u = (a as i32) - 1;

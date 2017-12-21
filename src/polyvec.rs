@@ -82,8 +82,7 @@ macro_rules! polyvec {
             fn eq(&self, other: &Self) -> bool {
                 self.0.iter().zip(&other.0)
                     .flat_map(|(x, y)| x.iter().zip(y.iter()))
-                    .find(|&(x, y)| x != y)
-                    .is_none()
+                    .all(|(x, y)| x == y)
             }
         }
 
