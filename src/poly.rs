@@ -121,10 +121,10 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
         let mut pos = 0;
 
         while ctr < a.len() {
-//            let mut t0 = u32::from(buf[pos]);
-//            t0 |= u32::from(buf[pos + 1]) << 8;
-//            t0 |= u32::from(buf[pos + 2]) << 16;
-//            t0 &= 0xfffff;
+            let mut t0 = u32::from(buf[pos]);
+            t0 |= u32::from(buf[pos + 1]) << 8;
+            t0 |= u32::from(buf[pos + 2]) << 16;
+            t0 &= 0xfffff;
 
             let mut t1 = u32::from(buf[pos + 2]) >> 4;
             t1 |= u32::from(buf[pos + 3]) << 4;
@@ -132,8 +132,8 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
 
             pos += 5;
 
-            if t1 <= 2 * GAMMA1 - 2 {
-                a[ctr] = Q + GAMMA1 - 1 - t1;
+            if t0 <= 2 * GAMMA1 - 2 {
+                a[ctr] = Q + GAMMA1 - 1 - t0;
                 ctr += 1;
             }
             if t1 <= 2 * GAMMA1 - 2 && ctr < a.len() {

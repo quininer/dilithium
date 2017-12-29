@@ -8,8 +8,6 @@ use ::poly::{ self, Poly };
 use ::polyvec::{ PolyVecL, PolyVecK };
 
 
-
-
 pub mod pk {
     use super::*;
 
