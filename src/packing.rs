@@ -145,7 +145,7 @@ pub mod sign {
         }
     }
 
-    pub fn unpack(sign: &[u8; SIG_SIZE_PACKED], z: &mut PolyVecL, h: &mut PolyVecK,c: &mut Poly) {
+    pub fn unpack(sign: &[u8; SIG_SIZE_PACKED], z: &mut PolyVecL, h: &mut PolyVecK, c: &mut Poly) {
         let (z_bytes, h_bytes, c_bytes) =
             array_refs!(
                 sign,

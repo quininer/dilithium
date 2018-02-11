@@ -168,6 +168,7 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
     }
 }
 
+#[inline]
 pub fn eta_pack(r: &mut [u8], a: &Poly) {
     if ETA <= 3 {
         let mut t = [0; 8];
@@ -202,6 +203,7 @@ pub fn eta_pack(r: &mut [u8], a: &Poly) {
     }
 }
 
+#[inline]
 pub fn eta_unpack(r: &mut Poly, a: &[u8]) {
     if ETA <= 3 {
         for i in 0..(N / 8) {
@@ -233,6 +235,7 @@ pub fn eta_unpack(r: &mut Poly, a: &[u8]) {
     }
 }
 
+#[inline]
 pub fn t0_pack(r: &mut [u8], a: &Poly) {
     let mut t = [0; 4];
     for i in 0..(N / 4) {
@@ -254,6 +257,7 @@ pub fn t0_pack(r: &mut [u8], a: &Poly) {
     }
 }
 
+#[inline]
 pub fn t0_unpack(r: &mut Poly, a: &[u8]) {
     for i in 0..(N / 4) {
         r[4*i+0]  = u32::from(a[7*i+0]);
@@ -277,6 +281,7 @@ pub fn t0_unpack(r: &mut Poly, a: &[u8]) {
     }
 }
 
+#[inline]
 pub fn t1_pack(r: &mut [u8], a: &Poly) {
     for i in 0..(N / 8) {
         r[9*i+0]  = ( a[8*i+0] & 0xFF) as u8;
@@ -291,6 +296,7 @@ pub fn t1_pack(r: &mut [u8], a: &Poly) {
     }
 }
 
+#[inline]
 pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
     for i in 0..(N / 8) {
         r[8*i+0] =  u32::from(a[9*i+0])       | (u32::from(a[9*i+1] & 0x01) << 8);
@@ -304,6 +310,7 @@ pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
     }
 }
 
+#[inline]
 pub fn z_pack(r: &mut [u8], a: &Poly) {
     let mut t = [0; 2];
     for i in 0..(N / 2) {
@@ -321,6 +328,7 @@ pub fn z_pack(r: &mut [u8], a: &Poly) {
     }
 }
 
+#[inline]
 pub fn z_unpack(r: &mut Poly, a: &[u8]) {
     for i in 0..(N / 2) {
         r[2*i+0]  = u32::from(a[5*i+0]);
@@ -338,6 +346,7 @@ pub fn z_unpack(r: &mut Poly, a: &[u8]) {
     }
 }
 
+#[inline]
 pub fn w1_pack(r: &mut [u8], a: &Poly) {
     for i in 0..(N / 2) {
         r[i] = (a[2 * i] | (a[2 * i + 1] << 4)) as u8;

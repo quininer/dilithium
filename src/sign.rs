@@ -125,23 +125,6 @@ pub fn keypair<R: Rng>(rng: &mut R, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_byte
     // Compute CRH(rho, t1) and write secret key
     shake256!(&mut tr; pk_bytes);
     packing::sk::pack(sk_bytes, rho, key, &tr, &s1, &s2, &t0);
-
-
-    let mut rho2 = [0; SEEDBYTES];
-    let mut key2 = [0; SEEDBYTES];
-    let mut mu2 = [0; CRHBYTES];
-    let mut s12 = PolyVecL::default();
-    let mut s22 = PolyVecK::default();
-    let mut t02 = PolyVecK::default();
-
-    packing::sk::unpack(sk_bytes, &mut rho2, &mut key2, &mut mu2, &mut s12, &mut s22, &mut t02);
-
-    assert!(&rho[..] == &rho2[..]);
-    assert!(&key[..] == &key2[..]);
-    assert!(&mu2[..] == &mu2[..]);
-    assert!(s1 == s12);
-    assert!(s2 == s22);
-    assert!(t0 == t02);
 }
 
 pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]) {
@@ -277,6 +260,9 @@ pub fn verify(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) 
 
     // Call random oracle and verify challenge
     challenge(&mut cp, &mu, &w1);
+
+    // TODO use subtle
+    //  https://github.com/isislovecruft/subtle/pull/5
     (0..N)
         .map(|i| c[i] ^ cp[i])
         .fold(0, |sum, next| sum | next)
