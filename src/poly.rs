@@ -1,7 +1,8 @@
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
     Q, N, D, ETA, GAMMA1,
-    SEEDBYTES, CRHBYTES
+    SEEDBYTES, CRHBYTES,
+    POLT1_SIZE_PACKED, POLETA_SIZE_PACKED, POLZ_SIZE_PACKED, POLW1_SIZE_PACKED
 };
 use ::reduce;
 pub use ::ntt::{ ntt, invntt_frominvmont as invntt_montgomery };
@@ -169,7 +170,7 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
 }
 
 #[inline]
-pub fn eta_pack(r: &mut [u8], a: &Poly) {
+pub fn eta_pack(r: &mut [u8; POLETA_SIZE_PACKED], a: &Poly) {
     if ETA <= 3 {
         let mut t = [0; 8];
         for i in 0..(N / 8) {
@@ -204,7 +205,7 @@ pub fn eta_pack(r: &mut [u8], a: &Poly) {
 }
 
 #[inline]
-pub fn eta_unpack(r: &mut Poly, a: &[u8]) {
+pub fn eta_unpack(r: &mut Poly, a: &[u8; POLETA_SIZE_PACKED]) {
     if ETA <= 3 {
         for i in 0..(N / 8) {
             r[8*i+0] = u32::from(a[3*i+0]) & 0x07;
@@ -282,7 +283,7 @@ pub fn t0_unpack(r: &mut Poly, a: &[u8]) {
 }
 
 #[inline]
-pub fn t1_pack(r: &mut [u8], a: &Poly) {
+pub fn t1_pack(r: &mut [u8; POLT1_SIZE_PACKED], a: &Poly) {
     for i in 0..(N / 8) {
         r[9*i+0]  = ( a[8*i+0] & 0xFF) as u8;
         r[9*i+1]  = ((a[8*i+0] >> 8) | ((a[8*i+1] & 0x7F) << 1)) as u8;
@@ -297,7 +298,7 @@ pub fn t1_pack(r: &mut [u8], a: &Poly) {
 }
 
 #[inline]
-pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
+pub fn t1_unpack(r: &mut Poly, a: &[u8; POLT1_SIZE_PACKED]) {
     for i in 0..(N / 8) {
         r[8*i+0] =  u32::from(a[9*i+0])       | (u32::from(a[9*i+1] & 0x01) << 8);
         r[8*i+1] = (u32::from(a[9*i+1]) >> 1) | (u32::from(a[9*i+2] & 0x03) << 7);
@@ -311,7 +312,7 @@ pub fn t1_unpack(r: &mut Poly, a: &[u8]) {
 }
 
 #[inline]
-pub fn z_pack(r: &mut [u8], a: &Poly) {
+pub fn z_pack(r: &mut [u8; POLZ_SIZE_PACKED], a: &Poly) {
     let mut t = [0; 2];
     for i in 0..(N / 2) {
         t[0] = (GAMMA1 - 1).wrapping_sub(a[2*i+0]);
@@ -329,7 +330,7 @@ pub fn z_pack(r: &mut [u8], a: &Poly) {
 }
 
 #[inline]
-pub fn z_unpack(r: &mut Poly, a: &[u8]) {
+pub fn z_unpack(r: &mut Poly, a: &[u8; POLZ_SIZE_PACKED]) {
     for i in 0..(N / 2) {
         r[2*i+0]  = u32::from(a[5*i+0]);
         r[2*i+0] |= u32::from(a[5*i+1]) << 8;
@@ -347,7 +348,7 @@ pub fn z_unpack(r: &mut Poly, a: &[u8]) {
 }
 
 #[inline]
-pub fn w1_pack(r: &mut [u8], a: &Poly) {
+pub fn w1_pack(r: &mut [u8; POLW1_SIZE_PACKED], a: &Poly) {
     for i in 0..(N / 2) {
         r[i] = (a[2 * i] | (a[2 * i + 1] << 4)) as u8;
     }

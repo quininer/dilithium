@@ -46,6 +46,7 @@ pub(crate) fn challenge(c: &mut Poly, mu: &[u8; CRHBYTES], w1: &PolyVecK) {
     let mut outbuf = [0; SHAKE256_RATE];
     let mut w1pack = [0; K * POLW1_SIZE_PACKED];
     for (i, pack) in w1pack.chunks_mut(POLW1_SIZE_PACKED).enumerate() {
+        let pack = array_mut_ref!(pack, 0, POLW1_SIZE_PACKED);
         poly::w1_pack(pack, &w1[i]);
     }
 
@@ -120,7 +121,7 @@ pub fn keypair<R: Rng>(rng: &mut R, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_byte
     // Extract t1 and write public key
     t.freeze();
     t.power2round(&mut t0, &mut t1);
-    packing::pk::pack(pk_bytes, &t1, rho);
+    packing::pk::pack(pk_bytes, rho, &t1);
 
     // Compute CRH(rho, t1) and write secret key
     shake256!(&mut tr; pk_bytes);
@@ -225,7 +226,7 @@ pub fn verify(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) 
     let (mut t1, mut w1, mut h) = Default::default();
     let (mut tmp1, mut tmp2) = (PolyVecK::default(), PolyVecK::default());
 
-    packing::pk::unpack(pk, &mut t1, &mut rho);
+    packing::pk::unpack(pk, &mut rho, &mut t1);
     packing::sign::unpack(sig, &mut z, &mut h, &mut c);
     if z.chknorm(GAMMA1 - BETA) { return false };
 

@@ -8,7 +8,7 @@ use dilithium::sign::{ keypair, sign, verify };
 
 #[test]
 fn test_sign() {
-    for _ in 0..5000 {
+    for _ in 0..500 {
         let mut rng = thread_rng();
         let mut message = [0; 59];
         let (mut pk, mut sk) = ([0; PUBLICKEYBYTES], [0; SECRETKEYBYTES]);
