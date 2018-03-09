@@ -227,7 +227,9 @@ pub fn verify(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) 
     let (mut tmp1, mut tmp2) = (PolyVecK::default(), PolyVecK::default());
 
     packing::pk::unpack(pk, &mut rho, &mut t1);
-    packing::sign::unpack(sig, &mut z, &mut h, &mut c);
+    let r = packing::sign::unpack(sig, &mut z, &mut h, &mut c);
+
+    if !r { return false };
     if z.chknorm(GAMMA1 - BETA) { return false };
 
     // Compute CRH(CRH(rho, t1), msg)

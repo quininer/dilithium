@@ -154,7 +154,7 @@ pub mod sign {
         }
     }
 
-    pub fn unpack(sign: &[u8; SIG_SIZE_PACKED], z: &mut PolyVecL, h: &mut PolyVecK, c: &mut Poly) {
+    pub fn unpack(sign: &[u8; SIG_SIZE_PACKED], z: &mut PolyVecL, h: &mut PolyVecK, c: &mut Poly) -> bool {
         let (zs_bytes, h_bytes, c_bytes) =
             array_refs!(
                 sign,
@@ -162,22 +162,48 @@ pub mod sign {
                 OMEGA + K,
                 N / 8 + 8
             );
+
         for i in 0..L {
             let z_bytes = array_ref!(zs_bytes, i * POLZ_SIZE_PACKED, POLZ_SIZE_PACKED);
             poly::z_unpack(&mut z[i], z_bytes);
         }
 
+        // Enforce standard representatives for strong unforgeability
+        if z.0.iter().flat_map(|p| p.iter()).any(|&v| v >= Q) {
+            return false;
+        }
+
         let mut k = 0;
         for i in 0..K {
+            // Coefficients are ordered for strong unforgeability
+            if (h_bytes[OMEGA + i] as usize) < k || (h_bytes[OMEGA + i] as usize) > OMEGA {
+                return false;
+            }
+
             for j in k..(h_bytes[OMEGA + i] as usize) {
+                if j > k && h_bytes[j] < h_bytes[j - 1] {
+                    return false;
+                }
+
                 h[i][h_bytes[j] as usize] = 1;
             }
             k = h_bytes[OMEGA + i] as usize;
         }
 
+        // Extra indices are zero for strong unforgeability
+        if h_bytes[k..OMEGA].iter().any(|&v| v != 0) {
+            return false;
+        }
+
         let signs = (0..8)
             .map(|i| u64::from(c_bytes[N / 8 + i]) << (8 * i))
             .fold(0, |sum, next| sum | next);
+
+        // Extra sign bits are zero for strong unforgeability
+        if signs >> 60 != 0 {
+            return false;
+        }
+
         let mut mask = 1;
         for i in 0..(N / 8) {
             for j in 0..8 {
@@ -189,5 +215,7 @@ pub mod sign {
                 }
             }
         }
+
+        true
     }
 }
