@@ -1,7 +1,9 @@
-use rand::random;
+extern crate rand;
+
 use super::*;
 use poly::Poly;
 use params::{ N, Q };
+use self::rand::{ Rng, thread_rng };
 
 
 const NTESTS: usize = 10000;
@@ -29,7 +31,7 @@ fn random_poly() -> Poly {
     let mut i = 0;
 
     while i < N {
-        let t = random::<u32>() & 0x7f_ffff;
+        let t = thread_rng().gen::<u32>() & 0x7f_ffff;
         if t < Q {
             p[i] = t;
             i += 1;

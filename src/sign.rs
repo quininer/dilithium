@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand_core::{ RngCore, CryptoRng };
 use byteorder::{ ByteOrder, LittleEndian };
 use ::params::{
     N, K, L, Q, D, GAMMA1, GAMMA2, BETA, OMEGA,
@@ -78,7 +78,7 @@ pub(crate) fn challenge(c: &mut Poly, mu: &[u8; CRHBYTES], w1: &PolyVecK) {
     }
 }
 
-pub fn keypair<R: Rng>(rng: &mut R, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_bytes: &mut [u8; SK_SIZE_PACKED]) {
+pub fn keypair<R: RngCore + CryptoRng>(rng: &mut R, pk_bytes: &mut [u8; PK_SIZE_PACKED], sk_bytes: &mut [u8; SK_SIZE_PACKED]) {
     let mut nonce = 0;
     let mut tr = [0; CRHBYTES];
     let mut seedbuf = [0; 3 * SEEDBYTES];

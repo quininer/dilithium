@@ -1,7 +1,7 @@
 extern crate rand;
 extern crate dilithium;
 
-use rand::{ Rng, thread_rng };
+use rand::{ RngCore, FromEntropy, ChaChaRng };
 use dilithium::params::*;
 use dilithium::sign::{ keypair, sign, verify };
 
@@ -9,7 +9,7 @@ use dilithium::sign::{ keypair, sign, verify };
 #[test]
 fn test_sign() {
     for _ in 0..500 {
-        let mut rng = thread_rng();
+        let mut rng = ChaChaRng::from_entropy();
         let mut message = [0; 59];
         let (mut pk, mut sk) = ([0; PUBLICKEYBYTES], [0; SECRETKEYBYTES]);
         let mut sig = [0; BYTES];
