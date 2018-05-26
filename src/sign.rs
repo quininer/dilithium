@@ -203,7 +203,7 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
         }
 
         ct0.freeze();
-        if ct0.chknorm(GAMMA2 - BETA) { continue };
+        if ct0.chknorm(GAMMA2) { continue };
 
         tmp.with_add(&wcs2, &ct0);
         ct0.neg();

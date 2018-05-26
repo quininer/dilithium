@@ -72,8 +72,9 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
     fn rej_eta(a: &mut [u32], buf: &[u8]) -> usize {
         let mut ctr = 0;
         let mut pos = 0;
+        let len = a.len();
 
-        while ctr < a.len() {
+        while ctr < len {
             let (t0, t1) =
                 if ETA <= 3 { (u32::from(buf[pos] & 0x07), u32::from(buf[pos] >> 5)) }
                 else { (u32::from(buf[pos] & 0x0f), u32::from(buf[pos] >> 4)) };
@@ -83,7 +84,7 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
                 a[ctr] = Q + ETA - t0;
                 ctr += 1;
             }
-            if t1 <= 2 * ETA && ctr < N {
+            if t1 <= 2 * ETA && ctr < len {
                 a[ctr] = Q + ETA - t1;
                 ctr += 1;
             }

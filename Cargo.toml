@@ -1,6 +1,6 @@
 [package]
 name = "dilithium"
-version = "0.2.0-alpha.2"
+version = "0.2.0-alpha.3"
 authors = ["quininer <quininer@live.com>"]
 description = "Digital Signatures from Module Lattices"
 repository = "https://github.com/quininer/dilithium"
