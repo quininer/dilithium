@@ -3,7 +3,7 @@ extern crate rand;
 use super::*;
 use poly::Poly;
 use params::{ N, Q };
-use self::rand::{ Rng, thread_rng };
+use self::rand::{ RngCore, thread_rng };
 
 
 const NTESTS: usize = 10000;
@@ -26,39 +26,27 @@ fn poly_naivemul(c: &mut Poly, a: &Poly, b: &Poly) {
     c.copy_from_slice(&r[..N]);
 }
 
-fn random_poly() -> Poly {
-    let mut p = [0; N];
-    let mut i = 0;
-
-    while i < N {
-        let t = thread_rng().gen::<u32>() & 0x7f_ffff;
-        if t < Q {
-            p[i] = t;
-            i += 1;
-        }
-    }
-
-    p
-}
-
 
 #[test]
 fn test_mul() {
+    let mut rndbuf = [0; 840];
+    let (mut c1, mut c2) = ([0; N], [0; N]);
+    let (mut a, mut b) = ([0; N], [0; N]);
+
     for _ in 0..NTESTS {
-        let (mut c1, mut c2) = ([0; N], [0; N]);
-        let (mut a, mut b) = (random_poly(), random_poly());
+        thread_rng().fill_bytes(&mut rndbuf);
+        poly::uniform(&mut a, &rndbuf);
+        thread_rng().fill_bytes(&mut rndbuf);
+        poly::uniform(&mut b, &rndbuf);
 
         poly_naivemul(&mut c1, &a, &b);
 
         poly::ntt(&mut a);
         poly::ntt(&mut b);
-        for i in 0..N {
-            c2[i] = reduce::montgomery_reduce(u64::from(a[i]) * u64::from(b[i]));
-        }
+        poly::pointwise_invmontgomery(&mut c2, &a, &b);
         poly::invntt_montgomery(&mut c2);
+        poly::csubq(&mut c2);
 
-        for i in 0..N {
-            assert_eq!(reduce::freeze(c2[i]), c1[i]);
-        }
+        assert_eq!(&c2[..], &c1[..]);
     }
 }

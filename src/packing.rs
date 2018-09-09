@@ -128,7 +128,7 @@ pub mod sign {
         let mut k = 0;
         for i in 0..K {
             for j in 0..N {
-                if h[i][j] == 1 {
+                if h[i][j] != 0 {
                     h_bytes[k] = j as u8;
                     k += 1;
                 }
@@ -168,20 +168,16 @@ pub mod sign {
             poly::z_unpack(&mut z[i], z_bytes);
         }
 
-        // Enforce standard representatives for strong unforgeability
-        if z.0.iter().flat_map(|p| p.iter()).any(|&v| v >= Q) {
-            return false;
-        }
-
+        // Decode h
         let mut k = 0;
         for i in 0..K {
-            // Coefficients are ordered for strong unforgeability
             if (h_bytes[OMEGA + i] as usize) < k || (h_bytes[OMEGA + i] as usize) > OMEGA {
                 return false;
             }
 
             for j in k..(h_bytes[OMEGA + i] as usize) {
-                if j > k && h_bytes[j] < h_bytes[j - 1] {
+                // Coefficients are ordered for strong unforgeability
+                if j > k && h_bytes[j] <= h_bytes[j - 1] {
                     return false;
                 }
 

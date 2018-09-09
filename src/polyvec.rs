@@ -2,8 +2,6 @@
 
 use ::params::{ N, L, K };
 use ::poly::{ self, Poly };
-use ::rounding::{ self, power2round, decompose };
-use ::reduce;
 
 
 macro_rules! polyvec {
@@ -12,6 +10,16 @@ macro_rules! polyvec {
         pub struct $polyvec(pub [Poly; $len]);
 
         impl $polyvec {
+            pub fn reduce(&mut self) {
+                self.0.iter_mut()
+                    .for_each(poly::reduce)
+            }
+
+            pub fn csubq(&mut self) {
+                self.0.iter_mut()
+                    .for_each(poly::csubq)
+            }
+
             pub fn freeze(&mut self) {
                 self.0.iter_mut()
                     .for_each(poly::freeze)
@@ -33,11 +41,6 @@ macro_rules! polyvec {
                 for i in 0..$len {
                     poly::sub(&mut self[i], &u[i], &v[i]);
                 }
-            }
-
-            pub fn neg(&mut self) {
-                self.0.iter_mut()
-                    .for_each(poly::neg);
             }
 
             pub fn shift_left(&mut self, k: u32) {
@@ -109,29 +112,19 @@ pub fn pointwise_acc_invmontgomery(w: &mut Poly, u: &PolyVecL, v: &PolyVecL) {
         poly::add_assign(w, &t);
     }
 
-    for i in 0..N {
-        w[i] = reduce::reduce32(w[i]);
-    }
+    poly::reduce(w);
 }
 
 impl PolyVecK {
     pub fn power2round(&self, v0: &mut Self, v1: &mut Self) {
         for i in 0..K {
-            for j in 0..N {
-                let (x, y) = power2round(self[i][j]);
-                v0[i][j] = x;
-                v1[i][j] = y;
-            }
+            poly::power2round(&self[i], &mut v0[i], &mut v1[i]);
         }
     }
 
     pub fn decompose(&self, v0: &mut Self, v1: &mut Self) {
         for i in 0..K {
-            for j in 0..N {
-                let (x, y) = decompose(self[i][j]);
-                v0[i][j] = x;
-                v1[i][j] = y;
-            }
+            poly::decompose(&self[i], &mut v0[i], &mut v1[i]);
         }
     }
 }
@@ -139,18 +132,13 @@ impl PolyVecK {
 pub fn make_hint(h: &mut PolyVecK, u: &PolyVecK, v: &PolyVecK) -> usize {
     let mut s = 0;
     for i in 0..K {
-        for j in 0..N {
-            h[i][j] = rounding::make_hint(u[i][j], v[i][j]);
-            s += h[i][j] as usize;
-        }
+        s += poly::make_hint(&u[i], &v[i], &mut h[i]);
     }
     s
 }
 
 pub fn use_hint(w: &mut PolyVecK, u: &PolyVecK, h: &PolyVecK) {
     for i in 0..K {
-        for j in 0..N {
-            w[i][j] = rounding::use_hint(u[i][j], h[i][j]);
-        }
+        poly::use_hint(&mut w[i], &u[i], &h[i]);
     }
 }

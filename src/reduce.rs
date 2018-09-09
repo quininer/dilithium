@@ -16,9 +16,14 @@ pub fn reduce32(mut a: u32) -> u32 {
     t
 }
 
-pub fn freeze(a: u32) -> u32 {
-    let mut a = reduce32(a);
+pub fn csubq(mut a: u32) -> u32 {
     a = a.wrapping_sub(Q as u32);
     let c = ((a as i32) >> 31) & Q as i32;
     a.wrapping_add(c as u32)
+}
+
+pub fn freeze(a: u32) -> u32 {
+    let a = reduce32(a);
+    let a = csubq(a);
+    a
 }

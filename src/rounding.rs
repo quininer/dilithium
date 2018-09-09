@@ -1,5 +1,4 @@
 use ::params::{ Q, D, ALPHA };
-use ::reduce::freeze;
 
 
 pub fn power2round(a: u32) -> (u32, u32) {
@@ -32,27 +31,18 @@ pub fn decompose(mut a: u32) -> (u32, u32) {
 
 pub fn make_hint(a: u32, b: u32) -> u32 {
     let (_, x) = decompose(a);
-    let (_, y) = decompose(freeze(a + b));
+    let (_, y) = decompose(b);
     if x != y { 1 } else { 0 }
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(collapsible_if))]
 pub fn use_hint(a: u32, hint: u32) -> u32 {
     let (a0, a1) = decompose(a);
 
     if hint == 0 {
         a1
     } else if a0 > Q {
-        if a1 == (Q - 1) / ALPHA - 1 {
-            0
-        } else {
-            a1 + 1
-        }
+        a1.wrapping_add(1) & 0xf
     } else {
-        if a1 == 0 {
-            (Q - 1) / ALPHA - 1
-        } else {
-            a1 - 1
-        }
+        a1.wrapping_sub(1) & 0xf
     }
 }

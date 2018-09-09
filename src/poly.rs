@@ -4,16 +4,29 @@ use ::params::{
     SEEDBYTES, CRHBYTES,
     POLT1_SIZE_PACKED, POLETA_SIZE_PACKED, POLZ_SIZE_PACKED, POLW1_SIZE_PACKED
 };
-use ::reduce;
+use ::reduce::{ reduce32, montgomery_reduce, freeze as xfreeze, csubq as xcsubq };
+use ::rounding;
 pub use ::ntt::{ ntt, invntt_frominvmont as invntt_montgomery };
 
 
 pub type Poly = [u32; N];
 
 
+pub fn reduce(a: &mut Poly) {
+    for i in 0..N {
+        a[i] = reduce32(a[i]);
+    }
+}
+
+pub fn csubq(a: &mut Poly) {
+    for i in 0..N {
+        a[i] = xcsubq(a[i]);
+    }
+}
+
 pub fn freeze(a: &mut Poly) {
     for i in 0..N {
-        a[i] = reduce::freeze(a[i]);
+        a[i] = xfreeze(a[i]);
     }
 }
 
@@ -35,12 +48,6 @@ pub fn sub(c: &mut Poly, a: &Poly, b: &Poly) {
     }
 }
 
-pub fn neg(a: &mut Poly) {
-    for i in 0..N {
-        a[i] = 2 * Q - a[i];
-    }
-}
-
 pub fn shift_left(a: &mut Poly, k: u32) {
     for i in 0..N {
         a[i] <<= k;
@@ -49,7 +56,40 @@ pub fn shift_left(a: &mut Poly, k: u32) {
 
 pub fn pointwise_invmontgomery(c: &mut Poly, a: &Poly, b: &Poly) {
     for i in 0..N {
-        c[i] = reduce::montgomery_reduce(u64::from(a[i]) * u64::from(b[i]));
+        c[i] = montgomery_reduce(u64::from(a[i]) * u64::from(b[i]));
+    }
+}
+
+pub fn power2round(a: &Poly, a0: &mut Poly, a1: &mut Poly) {
+    for i in 0..N {
+        let (x, y) = rounding::power2round(a[i]);
+        a0[i] = x;
+        a1[i] = y;
+    }
+}
+
+pub fn decompose(a: &Poly, a0: &mut Poly, a1: &mut Poly) {
+    for i in 0..N {
+        let (x, y) = rounding::decompose(a[i]);
+        a0[i] = x;
+        a1[i] = y;
+    }
+}
+
+pub fn make_hint(a: &Poly, b: &Poly, h: &mut Poly) -> usize {
+    let mut s = 0;
+
+    for i in 0..N {
+        h[i] = rounding::make_hint(a[i], b[i]);
+        s += h[i] as usize;
+    }
+
+    s
+}
+
+pub fn use_hint(a: &mut Poly, b: &Poly, h: &Poly) {
+    for i in 0..N {
+        a[i] = rounding::use_hint(b[i], h[i]);
     }
 }
 
@@ -63,6 +103,21 @@ pub fn chknorm(a: &Poly, b: u32) -> bool {
         .any(|t| t as u32 >= b)
 }
 
+pub fn uniform(a: &mut Poly, buf: &[u8]) {
+    let mut ctr = 0;
+    let mut pos = 0;
+
+    while ctr < N {
+        let val = LittleEndian::read_u24(&buf[pos..]) & 0x7f_ffff;
+        pos += 3;
+
+        if val < Q {
+            a[ctr] = val;
+            ctr += 1;
+        }
+    }
+}
+
 pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
     use digest::{ Input, ExtendableOutput, XofReader };
     use sha3::Shake256;
@@ -74,7 +129,7 @@ pub fn uniform_eta(a: &mut Poly, seed: &[u8; SEEDBYTES], nonce: u8) {
         let mut pos = 0;
         let len = a.len();
 
-        while ctr < len {
+        while ctr < len && pos < buf.len() {
             let (t0, t1) =
                 if ETA <= 3 { (u32::from(buf[pos] & 0x07), u32::from(buf[pos] >> 5)) }
                 else { (u32::from(buf[pos] & 0x0f), u32::from(buf[pos] >> 4)) };
@@ -122,7 +177,7 @@ pub fn uniform_gamma1m1(a: &mut Poly, seed: &[u8; SEEDBYTES], mu: &[u8; CRHBYTES
         let mut ctr = 0;
         let mut pos = 0;
 
-        while ctr < a.len() {
+        while ctr < a.len() && pos + 5 <= buf.len() {
             let mut t0 = u32::from(buf[pos]);
             t0 |= u32::from(buf[pos + 1]) << 8;
             t0 |= u32::from(buf[pos + 2]) << 16;

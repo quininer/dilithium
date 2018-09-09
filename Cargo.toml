@@ -14,7 +14,7 @@ mode2 = []
 mode3 = []
 
 [dependencies]
-rand_core = "0.2"
+rand_core = { version = "0.2", default-features = false }
 arrayref = "0.3"
 itertools = "0.7"
 byteorder = "1"

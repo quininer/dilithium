@@ -11,7 +11,6 @@ use ::packing;
 
 
 
-/// NOTE panic possible
 pub(crate) fn expand_mat(mat: &mut [PolyVecL; K], rho: &[u8; SEEDBYTES]) {
     const SHAKE128_RATE: usize = 168;
 
@@ -19,20 +18,8 @@ pub(crate) fn expand_mat(mat: &mut [PolyVecL; K], rho: &[u8; SEEDBYTES]) {
 
     for i in 0..K {
         for j in 0..L {
-            let mut ctr = 0;
-            let mut pos = 0;
-
             shake128!(&mut outbuf; rho, &[(i + (j << 4)) as u8]);
-
-            while ctr < N {
-                let val = LittleEndian::read_u24(&outbuf[pos..]) & 0x7f_ffff;
-                pos += 3;
-
-                if val < Q {
-                    mat[i][j][ctr] = val;
-                    ctr += 1;
-                }
-            }
+            poly::uniform(&mut mat[i][j], &outbuf);
         }
     }
 }
@@ -112,6 +99,7 @@ pub fn keypair<R: RngCore + CryptoRng>(rng: &mut R, pk_bytes: &mut [u8; PK_SIZE_
     s1hat.ntt();
     for i in 0..K {
         polyvec::pointwise_acc_invmontgomery(&mut t[i], &mat[i], &s1hat);
+        poly::reduce(&mut t[i]);
         poly::invntt_montgomery(&mut t[i])
     }
 
@@ -168,7 +156,7 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
         }
 
         // Decompose w and call the random oracle
-        w.freeze();
+        w.csubq();
         w.decompose(&mut tmp, &mut w1);
         challenge(&mut c, &mu, &w1);
 
@@ -191,7 +179,7 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
         wcs2.with_sub(&w, &wcs20);
         wcs2.freeze();
         wcs2.decompose(&mut wcs20, &mut tmp);
-        wcs20.freeze();
+        wcs20.csubq();
         if wcs20.chknorm(GAMMA2 - BETA) { continue };
 
         if tmp != w1 { continue };
@@ -202,13 +190,12 @@ pub fn sign(sig: &mut [u8; SIG_SIZE_PACKED], m: &[u8], sk: &[u8; SK_SIZE_PACKED]
             poly::invntt_montgomery(&mut ct0[i]);
         }
 
-        ct0.freeze();
+        ct0.csubq();
         if ct0.chknorm(GAMMA2) { continue };
 
         tmp.with_add(&wcs2, &ct0);
-        ct0.neg();
-        tmp.freeze();
-        let hint = polyvec::make_hint(&mut h, &tmp, &ct0);
+        tmp.csubq();
+        let hint = polyvec::make_hint(&mut h, &wcs2, &tmp);
         if hint > OMEGA { continue };
 
         // Write signature
@@ -232,13 +219,13 @@ pub fn verify(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) 
     if !r { return false };
     if z.chknorm(GAMMA1 - BETA) { return false };
 
+    // TODO
     // Compute CRH(CRH(rho, t1), msg)
     shake256!(&mut mu; pk);
     shake256!(&mut mu; &mu, m);
 
-    expand_mat(&mut mat, &rho);
-
     // Matrix-vector multiplication; compute Az - c2^dt1
+    expand_mat(&mut mat, &rho);
     z.ntt();
     for i in 0..K {
         polyvec::pointwise_acc_invmontgomery(&mut tmp1[i], &mat[i], &z);
@@ -254,11 +241,11 @@ pub fn verify(m: &[u8], sig: &[u8; SIG_SIZE_PACKED], pk: &[u8; PK_SIZE_PACKED]) 
 
     let mut tmp = PolyVecK::default();
     tmp.with_sub(&tmp1, &tmp2);
-    tmp.freeze();
+    tmp.reduce();
     tmp.invntt_montgomery();
 
     // Reconstruct w1
-    tmp.freeze();
+    tmp.csubq();
     polyvec::use_hint(&mut w1, &tmp, &h);
 
     // Call random oracle and verify challenge

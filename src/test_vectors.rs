@@ -141,7 +141,7 @@ fn test_vectors() {
             polyvec::pointwise_acc_invmontgomery(&mut w[i], &mat[i], &y);
             poly::invntt_montgomery(&mut w[i]);
         }
-        w.freeze();
+        w.csubq();
         w.decompose(&mut tmp, &mut w1);
         assert!(&w1 == &tv.w1);
 
